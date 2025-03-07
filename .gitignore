@@ -1,1 +1,4 @@
 /venv
+/back-end/whisper-medium-ct2
+/back-end/parser.py
+/back-end/voice_audio.wav
