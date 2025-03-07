@@ -72,15 +72,16 @@ class audioRecorder:
         
         frames = []
         max_time = 20
+        print('hold space to start')
+
         while True:
             flag = False
             starting_time = time.time()
-
             while keyboard.is_pressed('space') :
                 curr_time = time.time()
                 if curr_time - starting_time >= max_time:
                     break
-                data = self.stream.read(self.chunk)
+                data = stream.read(self.chunk)
                 frames.append(data)
                 flag = True
 
@@ -88,14 +89,18 @@ class audioRecorder:
                 break
             
 
-
+        with wave.open(self.file_name, 'wb') as wf:
+            wf.setnchannels(1)  # Mono audio
+            wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+            wf.setframerate(self.sample_rate)
+            wf.writeframes(b''.join(frames))  # Write the frames to the file
         print("Finished recording.")
 
         # stop and close stream
         stream.stop_stream()
         stream.close()
 
-
+print('starting...')
 test_model = whisperModel()
 test_recorder = audioRecorder() 
 
