@@ -1,2 +1,4 @@
+./.venv
+.env*
 # All node_modules
 extension/node_modules/
