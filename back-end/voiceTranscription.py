@@ -2,6 +2,7 @@ from faster_whisper import WhisperModel
 """
 ct2-transformers-converter --model openai/whisper-medium --output_dir whisper-medium-ct2 --copy_files tokenizer.json preprocessor_config.json --quantization float16
 
+DOWNLOAD THIS: (Insert into terminal)
 ct2-transformers-converter --model openai/whisper-medium --output_dir whisper-medium-ct2 --copy_files tokenizer.json preprocessor_config.json --quantization int8
 
 
@@ -12,6 +13,8 @@ import sys
 import pyaudio
 import keyboard
 import time
+from parser import textParser
+import re
 
 
 class whisperModel:
@@ -19,7 +22,7 @@ class whisperModel:
         #model_size = "medium"
         model_size= "whisper-medium-ct2"
         self.model = WhisperModel(model_size, device="cpu", compute_type="int8")
-        
+
         #optional
         self.audio_path = "voice_audio.wav"
         """
@@ -31,13 +34,20 @@ class whisperModel:
 
         """
 
+
+
+
     def process_file(self, file):
         
         segments, info = self.mode.transcribe(file,beam_size=5)
         audio_text = []
         for segment in segments:
             audio_text.append(segment.text)
-        return audio_text
+        
+        audio_text = " ".join(audio_text)
+        audio_text.strip()
+        filter_text = re.sub(r'[^a-zA-Z0-9 ]', '', audio_text) 
+        return filter_text.split(' ')
             
     def get_text(self):
         segments, info = self.model.transcribe(self.audio_path, beam_size=5)
@@ -45,7 +55,11 @@ class whisperModel:
         for segment in segments:
             print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
             audio_text.append(segment.text)
-        return audio_text
+
+        audio_text = " ".join(audio_text)
+        audio_text.strip()
+        filter_text = re.sub(r'[^a-zA-Z0-9 ]', '', audio_text) 
+        return filter_text.split(' ')
        
       
 class audioRecorder:
@@ -103,7 +117,10 @@ class audioRecorder:
 print('starting...')
 test_model = whisperModel()
 test_recorder = audioRecorder() 
+parser = textParser()
 
 for _ in range(1):
     test_recorder.record()
-    print(test_model.get_text())
+    transcribe = test_model.get_text()
+
+    print(parser.parse(transcribe))
