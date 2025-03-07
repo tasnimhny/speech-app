@@ -1,1 +1,4 @@
-
+faster-whisper
+pyaudio
+openai
+fastapi
