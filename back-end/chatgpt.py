@@ -1,43 +1,43 @@
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
-import json
 
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+class OpenAIChat:
 
-client = OpenAI(api_key=api_key)
 
-app = FastAPI()
+    def __init__(self):
+        load_dotenv()  
+        api_key = os.getenv("OPENAI_API_KEY")
 
-@app.get("/fix-code")
-async def stream_fixed_code():
-    """
-    Streams AI response for code fixing request.
-    """
-    
-    def stream_generator():
-        # OpenAI Streaming Response
-        stream = client.chat.completions.create(
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found. Please set it in your .env file.")
+
+        self.client = OpenAI(api_key=api_key)
+
+ 
+    def get_fixed_code(self, incorrect_code: str) -> str:
+        print(incorrect_code)
+        prompt = f"""
+            The following Python code contains an error:
+            {incorrect_code}
+
+            Fix the error and return only the corrected line. Do not include explanations or any additional text.
+            """
+
+
+        stream = self.client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": "I will give you a string of code, I want you to fix whatever error is in the code. "
-                               "For example: for i in rnage(8) give me the fixed version of that line and only that line."
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
             stream=True,
         )
 
-        response_text = ""
+        fixed_code = ""  
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
-                response_text += chunk.choices[0].delta.content
-                json_response = json.dumps({"response": response_text})  # Convert to JSON
-                yield f"{json_response}\n"  # Send JSON chunks as stream
+                fixed_code += chunk.choices[0].delta.content  # Append streamed content
 
-    return StreamingResponse(stream_generator(), media_type="application/json")
+        return fixed_code  
+ 
+
+
 
