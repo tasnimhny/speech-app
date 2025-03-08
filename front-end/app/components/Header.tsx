@@ -1,23 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { signInWithPopup, signOut } from "firebase/auth";
+import { 
+  signInWithPopup, 
+  signOut, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile 
+} from "firebase/auth";
 import { auth, provider } from "../lib/firebase";
 import { useAuth } from "./AuthProvider";
 
 export default function Header() {
   const [showLogin, setShowLogin] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { user } = useAuth();
+
+  // Reset inputs when modal opens/closes
+  useEffect(() => {
+    if (!showLogin) {
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setError(null);
+    }
+  }, [showLogin]);
 
   const handleGoogleLogin = async () => {
     setShowLogin(false);
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
-      console.error("Error signing in with Google:", error);
+      setError("Google login failed. Try again.");
     }
   };
 
@@ -30,23 +53,62 @@ export default function Header() {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      setShowLogin(false);
+    } catch (error: any) {
+      if (error.code === "auth/user-not-found") {
+        setError("No account found with this email.");
+      } else if (error.code === "auth/wrong-password") {
+        setError("Incorrect password. Try again.");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      await updateProfile(user, {
+        displayName: `${firstName} ${lastName}`,
+      });
+
+      setShowLogin(false);
+    } catch (error: any) {
+      if (error.code === "auth/email-already-in-use") {
+        setError("This email is already in use.");
+      } else if (error.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters.");
+      } else if (error.code === "auth/invalid-email") {
+        setError("Invalid email format.");
+      } else {
+        setError("Error signing up. Try again.");
+      }
+    }
+  };
+
   return (
     <>
       <header className="bg-gray-800 sticky top-0 z-50">
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
-          
           {/* Logo and Brand Name */}
           <div className="flex items-center lg:flex-1 space-x-3">
             <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
-              {/* Logo */}
               <Image 
-                src="/images/SpeechCode.png" // Replace with actual logo path
+                src="/images/SpeechCode.png"
                 width={35} 
                 height={35} 
                 alt="Code Whisperer Logo" 
                 className="rounded-full"
               />
-              {/* Brand Name */}
               <span className="font-bold text-xl text-white">Code Whisperer</span>
             </Link>
           </div>
@@ -65,7 +127,7 @@ export default function Header() {
               <div className="relative">
                 <button 
                   onClick={() => setDropdownOpen(!dropdownOpen)} 
-                  className="flex items-center gap-2 text-sm font-semibold text-white"
+                  className="flex items-center gap-2 text-sm font-semibold text-white hover:text-gray-300"
                 >
                   {user.photoURL ? (
                     <div className="w-8 h-8 rounded-full overflow-hidden relative">
@@ -103,22 +165,32 @@ export default function Header() {
         </nav>
       </header>
 
-      {/* Login Modal */}
+      {/* Login/Sign Up Modal */}
       {showLogin && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-2xl font-bold text-white">Login</h2>
-            <button 
-              onClick={handleGoogleLogin} 
-              className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded"
-            >
-              Login with Google
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-2xl font-bold text-white">{isSignUp ? "Sign Up" : "Login"}</h2>
+
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+
+            <form className="mt-4" onSubmit={isSignUp ? handleSignUp : handleEmailLogin}>
+              {isSignUp && (
+                <>
+                  <input type="text" placeholder="First Name" className="w-full p-2 rounded-md bg-gray-800 text-white" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  <input type="text" placeholder="Last Name" className="w-full p-2 mt-2 rounded-md bg-gray-800 text-white" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                </>
+              )}
+              <input type="email" placeholder="Email" className="w-full p-2 mt-2 rounded-md bg-gray-800 text-white" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input type="password" placeholder="Password" className="w-full p-2 mt-2 rounded-md bg-gray-800 text-white" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <button type="submit" className="mt-4 w-full bg-white text-black font-semibold py-2 rounded">{isSignUp ? "Sign Up" : "Login"}</button>
+            </form>
+
+            <button onClick={handleGoogleLogin} className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded">
+              Continue with Google
             </button>
-            <button 
-              onClick={() => setShowLogin(false)} 
-              className="mt-4 w-full text-center text-sm text-gray-400 hover:text-white"
-            >
-              Close
+
+            <button onClick={() => setShowLogin(false)} className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded">
+              Go Back
             </button>
           </div>
         </div>
