@@ -26,6 +26,7 @@ class OpenAIChat:
                     - Convert spoken punctuation like "open parenthesis" to `(`, "close curly brace" to closed curly brace, etc.
                     - Ignore filler words like "uh", "um", or "next line please."
 -                   - If the spoken code is ambiguous, infer the most logical syntax.
+                    - ONLY RETURN THE CODE
 
                     Here is the spoken code: {incorrect_code}
 
@@ -34,7 +35,7 @@ class OpenAIChat:
 
 
         stream = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             stream=True,
         )
@@ -53,7 +54,7 @@ class OpenAIChat:
             Here is the code: {code}
         """
         stream = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             stream=True,
         )
