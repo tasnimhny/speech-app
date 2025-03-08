@@ -1,17 +1,124 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
-const vscode = require("vscode");
-const path = require("path");
-const fs = require("fs");
-const cp = require("child_process");
-const os = require("os");
+const vscode = __importStar(require("vscode"));
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
+const cp = __importStar(require("child_process"));
+const os = __importStar(require("os"));
+const http = __importStar(require("http"));
+const form_data_1 = __importDefault(require("form-data"));
 // Create output channel
 const outputChannel = vscode.window.createOutputChannel("Voice to Code");
+// Backend API URL
+const API_URL = 'http://localhost:8000/process-audio/';
 class VoiceRecorderViewProvider {
     constructor(_extensionUri) {
         this._extensionUri = _extensionUri;
+    }
+    async sendAudioToBackend(audioFilePath) {
+        return new Promise((resolve, reject) => {
+            const form = new form_data_1.default();
+            form.append('file', fs.createReadStream(audioFilePath));
+            const request = http.request(API_URL, {
+                method: 'POST',
+                headers: {
+                    ...form.getHeaders(),
+                }
+            }, (response) => {
+                let data = '';
+                response.on('data', (chunk) => {
+                    data += chunk;
+                });
+                response.on('end', () => {
+                    try {
+                        const result = JSON.parse(data);
+                        resolve(result);
+                    }
+                    catch (error) {
+                        reject(new Error('Failed to parse response from backend'));
+                    }
+                });
+            });
+            request.on('error', (error) => {
+                reject(error);
+            });
+            form.pipe(request);
+        });
+    }
+    async insertTextIntoEditor(text) {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            const position = editor.selection.active;
+            const currentLine = editor.document.lineAt(position.line);
+            // Get the indentation of the current line
+            const currentIndent = currentLine.firstNonWhitespaceCharacterIndex;
+            const indentString = ' '.repeat(currentIndent);
+            // Format the text with proper indentation
+            const formattedText = text
+                .split('\n')
+                .map((line, index) => index === 0 ? line : indentString + line)
+                .join('\n');
+            // Insert the text
+            await editor.edit(editBuilder => {
+                editBuilder.insert(position, formattedText);
+            });
+            // Get the range of the inserted text
+            const startPos = position;
+            const endPos = position.translate(formattedText.split('\n').length);
+            const range = new vscode.Range(startPos, endPos);
+            try {
+                // Format the document using VSCode's formatting API
+                await vscode.commands.executeCommand('editor.action.formatSelection', {
+                    start: startPos,
+                    end: endPos
+                });
+            }
+            catch (error) {
+                outputChannel.appendLine(`Warning: Could not format code: ${error}`);
+                // Continue even if formatting fails
+            }
+        }
+        else {
+            throw new Error('No active text editor');
+        }
     }
     resolveWebviewView(webviewView, context, _token) {
         this._view = webviewView;
@@ -126,10 +233,22 @@ class VoiceRecorderViewProvider {
             if (this.currentAudioFile && fs.existsSync(this.currentAudioFile)) {
                 const stats = fs.statSync(this.currentAudioFile);
                 outputChannel.appendLine(`Recording saved: ${this.currentAudioFile} (${stats.size} bytes)`);
-                this._view.webview.postMessage({
-                    command: 'updateStatus',
-                    text: 'Recording saved successfully'
-                });
+                try {
+                    // Send the audio file to the backend
+                    const result = await this.sendAudioToBackend(this.currentAudioFile);
+                    outputChannel.appendLine('Received transcription from backend');
+                    outputChannel.appendLine(`Original: ${result.original_transcription}`);
+                    outputChannel.appendLine(`Parsed: ${result.parsed_transcription}`);
+                    // Insert the parsed transcription into the current editor
+                    await this.insertTextIntoEditor(result.parsed_transcription);
+                    this._view.webview.postMessage({
+                        command: 'updateStatus',
+                        text: 'Transcription inserted into editor'
+                    });
+                }
+                catch (error) {
+                    throw new Error(`Failed to process audio: ${error}`);
+                }
             }
             else {
                 throw new Error('Recording file not found');
