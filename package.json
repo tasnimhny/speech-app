@@ -1,8 +1,1 @@
-{
-  "dependencies": {
-    "react-rnd": "^10.5.2"
-  },
-  "devDependencies": {
-    "@types/react-rnd": "^8.0.0"
-  }
-}
+{}
