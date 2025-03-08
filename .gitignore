@@ -10,3 +10,9 @@ back-end/whisper-medium-ct2
 /back-end/modelDownload.py
 # All node_modules
 extension/node_modules/
+
+#github workflow
+.github
+
+# Environment variables
+extension/.env
