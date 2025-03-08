@@ -56,8 +56,12 @@ class whisperModel:
         audio_text = audio_text.lower()
         filter_text = re.sub(r'[^a-zA-Z0-9 ]', '', audio_text) 
         print('DONE: ')
-        print(filter_text.split(' '))
-        return (filter_text.split(' '), before_parse)
+        filter_text = filter_text.split(' ')
+        
+        if filter_text[0] =='go':
+            return (filter_text, before_parse)
+        
+        return (filter_text, before_parse)
             
     def get_text(self):
         segments, info = self.model.transcribe(self.audio_path, beam_size=5)
@@ -127,7 +131,7 @@ class audioRecorder:
         stream.close()
 
 #test:
-
+"""
 print('starting...')
 test_model = whisperModel()
 test_recorder = audioRecorder() 
@@ -138,3 +142,4 @@ for _ in range(1):
     transcribe = test_model.get_text()
 
     print(parser.parse(transcribe)) 
+"""

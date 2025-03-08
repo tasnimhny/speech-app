@@ -1,5 +1,6 @@
 from chatgpt import OpenAIChat
 import re
+
 class textParser:
     def __init__(self):   
         self.open_model = OpenAIChat()
@@ -30,6 +31,10 @@ class textParser:
         'dash' : '-',
         'mod' : '%',
         'true' : 'True',
+        'false' : 'False',
+        'list' :'[]',
+        'set' :'set()',
+        'dictionary' : '{{}}'
         }
 
 
