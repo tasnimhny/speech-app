@@ -51,6 +51,16 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
     if (!this._view) return;
 
     try {
+      // Check if user is authenticated with GitHub
+      const session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: true });
+      if (!session) {
+        this._view.webview.postMessage({ 
+          command: 'updateStatus', 
+          text: 'Please sign in with GitHub to use voice recording' 
+        });
+        return;
+      }
+
       // Create audio directory if it doesn't exist
       const audioDir = path.join(this._extensionUri.fsPath, 'audio');
       if (!fs.existsSync(audioDir)) {
