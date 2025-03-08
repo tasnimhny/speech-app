@@ -40,6 +40,12 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
         response.on('end', () => {
           try {
             const result = JSON.parse(data);
+            // Delete the audio file after sending it
+            fs.unlink(audioFilePath, (err) => {
+              if (err) {
+                outputChannel.appendLine(`Warning: Could not delete temporary audio file: ${err}`);
+              }
+            });
             resolve(result);
           } catch (error) {
             reject(new Error('Failed to parse response from backend'));
@@ -57,42 +63,73 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
 
   private async insertTextIntoEditor(text: string) {
     const editor = vscode.window.activeTextEditor;
-    if (editor) {
-      const position = editor.selection.active;
-      const currentLine = editor.document.lineAt(position.line);
-      
-      // Get the indentation of the current line
-      const currentIndent = currentLine.firstNonWhitespaceCharacterIndex;
-      const indentString = ' '.repeat(currentIndent);
-      
-      // Format the text with proper indentation
-      const formattedText = text
-        .split('\n')
-        .map((line, index) => index === 0 ? line : indentString + line)
-        .join('\n');
-
-      // Insert the text
-      await editor.edit(editBuilder => {
-        editBuilder.insert(position, formattedText);
-      });
-
-      // Get the range of the inserted text
-      const startPos = position;
-      const endPos = position.translate(formattedText.split('\n').length);
-      const range = new vscode.Range(startPos, endPos);
-
-      try {
-        // Format the document using VSCode's formatting API
-        await vscode.commands.executeCommand('editor.action.formatSelection', {
-          start: startPos,
-          end: endPos
-        });
-      } catch (error) {
-        outputChannel.appendLine(`Warning: Could not format code: ${error}`);
-        // Continue even if formatting fails
-      }
-    } else {
+    if (!editor) {
       throw new Error('No active text editor');
+    }
+
+    if (!text) {
+      outputChannel.appendLine('Warning: Received empty text from backend');
+      return;
+    }
+
+    // Check for "go to line" command
+    const goToLineMatch = text.toLowerCase().match(/^go to line (\d+)$/);
+    if (goToLineMatch) {
+      const lineNumber = parseInt(goToLineMatch[1]) - 1; // Convert to 0-based index
+      if (lineNumber >= 0 && lineNumber < editor.document.lineCount) {
+        // Move cursor to the specified line
+        const newPosition = new vscode.Position(lineNumber, 0);
+        editor.selection = new vscode.Selection(newPosition, newPosition);
+        editor.revealRange(new vscode.Range(newPosition, newPosition), vscode.TextEditorRevealType.InCenter);
+        
+        // Update status
+        this._view?.webview.postMessage({ 
+          command: 'updateStatus', 
+          text: `Moved to line ${lineNumber + 1}` 
+        });
+        return;
+      } else {
+        outputChannel.appendLine(`Warning: Invalid line number ${lineNumber + 1}`);
+        this._view?.webview.postMessage({ 
+          command: 'updateStatus', 
+          text: `Invalid line number ${lineNumber + 1}` 
+        });
+        return;
+      }
+    }
+
+    const position = editor.selection.active;
+    const currentLine = editor.document.lineAt(position.line);
+    
+    // Get the indentation of the current line
+    const currentIndent = currentLine.firstNonWhitespaceCharacterIndex;
+    const indentString = ' '.repeat(currentIndent);
+    
+    // Format the text with proper indentation
+    const formattedText = text
+      .split('\n')
+      .map((line, index) => index === 0 ? line : indentString + line)
+      .join('\n');
+
+    // Insert the text
+    await editor.edit(editBuilder => {
+      editBuilder.insert(position, formattedText);
+    });
+
+    // Get the range of the inserted text
+    const startPos = position;
+    const endPos = position.translate(formattedText.split('\n').length);
+    const range = new vscode.Range(startPos, endPos);
+
+    try {
+      // Format the document using VSCode's formatting API
+      await vscode.commands.executeCommand('editor.action.formatSelection', {
+        start: startPos,
+        end: endPos
+      });
+    } catch (error) {
+      outputChannel.appendLine(`Warning: Could not format code: ${error}`);
+      // Continue even if formatting fails
     }
   }
 
@@ -130,8 +167,15 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
     if (!this._view) return;
 
     try {
-      // Check if user is authenticated with GitHub
-      const session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: true });
+      // Try to get existing session first
+      let session;
+      try {
+        session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: false });
+      } catch (e) {
+        // If no session exists, try to create one
+        session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: true });
+      }
+
       if (!session) {
         this._view.webview.postMessage({ 
           command: 'updateStatus', 
@@ -282,46 +326,61 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
         <title>Voice Recorder</title>
         <style>
             body {
-                padding: 10px;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
                 color: var(--vscode-foreground);
                 font-family: var(--vscode-font-family);
                 background-color: var(--vscode-editor-background);
+            }
+            .recording-container {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                margin-bottom: 1rem;
             }
             .recording-indicator {
                 width: 12px;
                 height: 12px;
                 border-radius: 50%;
                 background-color: #ff0000;
-                margin-bottom: 1rem;
                 display: none;
+                box-shadow: 0 0 8px #ff0000;
             }
             .recording .recording-indicator {
                 display: block;
                 animation: pulse 1.5s infinite;
             }
             @keyframes pulse {
-                0% { opacity: 1; }
-                50% { opacity: 0.5; }
-                100% { opacity: 1; }
+                0% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.5; transform: scale(1.2); }
+                100% { opacity: 1; transform: scale(1); }
             }
             .status {
                 margin: 10px 0;
                 font-size: 12px;
+                text-align: center;
             }
             .button-container {
                 display: flex;
-                gap: 8px;
+                gap: 12px;
                 margin: 10px 0;
+                justify-content: center;
             }
             button {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 border: none;
-                padding: 4px 8px;
+                width: 40px;
+                height: 40px;
+                border-radius: 20px;
                 background-color: var(--vscode-button-background);
                 color: var(--vscode-button-foreground);
                 cursor: pointer;
+                transition: all 0.2s;
+                padding: 8px;
             }
             button:disabled {
                 opacity: 0.5;
@@ -329,29 +388,73 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
             }
             button:not(:disabled):hover {
                 background-color: var(--vscode-button-hoverBackground);
+                transform: scale(1.1);
+            }
+            button svg {
+                width: 100%;
+                height: 100%;
+                fill: currentColor;
+            }
+            .tips {
+                margin-top: 20px;
+                padding: 12px;
+                border-radius: 6px;
+                background-color: var(--vscode-editor-inactiveSelectionBackground);
+                width: 100%;
+                max-width: 300px;
+            }
+            .tips h3 {
+                margin: 0 0 8px 0;
+                font-size: 14px;
+                color: var(--vscode-foreground);
+                text-align: center;
+            }
+            .tips ul {
+                margin: 0;
+                padding-left: 20px;
+                font-size: 12px;
+                color: var(--vscode-foreground);
+                opacity: 0.9;
+            }
+            .tips li {
+                margin: 4px 0;
             }
             .debug-info {
-                margin-top: 10px;
+                margin-top: 16px;
                 font-size: 11px;
                 color: var(--vscode-descriptionForeground);
                 white-space: pre-wrap;
                 max-height: 200px;
                 overflow-y: auto;
+                width: 100%;
             }
         </style>
     </head>
     <body>
-        <div class="recording-indicator"></div>
+        <div class="recording-container">
+            <div class="recording-indicator"></div>
+        </div>
         <div class="status">Ready to record</div>
         <div class="button-container">
-            <button id="startButton">
-                <span class="codicon codicon-record"></span>
-                Start Recording
+            <button id="startButton" title="Start Recording">
+                <svg viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
             </button>
-            <button id="stopButton" disabled>
-                <span class="codicon codicon-debug-stop"></span>
-                Stop Recording
+            <button id="stopButton" disabled title="Stop Recording">
+                <svg viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12"/>
+                </svg>
             </button>
+        </div>
+        <div class="tips">
+            <h3>Tips for best results:</h3>
+            <ul>
+                <li> Speak clearly and at a normal pace</li>
+                <li> Use keywords like "function", "if", "for", etc.</li>
+                <li> Use "camel" or "snake" for case formatting</li>
+                <li> Say "go to line {number}" to move cursor</li>
+            </ul>
         </div>
         <div class="debug-info"></div>
 

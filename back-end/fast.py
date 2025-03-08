@@ -41,7 +41,14 @@ async def process_audio(file: UploadFile = File(...)):
 
         # Use Whisper to transcribe the audio file
         transcription, pre_process_transcription = transcription_model.process_file(file_path)
+
         # Parse the transcription (using textParser)
+        if transcription[0] =='go':
+            print(transcription)
+            transcription = " ".join(transcription)
+            return JSONResponse(content={"original_transcription": pre_process_transcription, "parsed_transcription": transcription})
+        
+        # This goes to chatgpt
         parsed_transcription = text_parser.parse(transcription)
 
         # Return the parsed transcription as a JSON response

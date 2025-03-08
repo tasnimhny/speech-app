@@ -11,7 +11,7 @@ torch
 keyboard
 aiofiles
 dotenv
-ctranslate2
+huggingface_hub
 torch
 python-multipart
 black
