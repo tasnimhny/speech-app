@@ -1,20 +1,17 @@
 ./.venv
 .env*
-
-/venv
-/back-end/__pycache__/
-/.github
-/back-end/whisper-medium-ct2
-back-end/whisper-medium-ct2
-/back-end/whisper_models
-/back-end/modelDownload.py
 # All node_modules
 extension/node_modules/
 
 #github workflow
 .github
-
-# Environment variables
-extension/.env
+/venv
+/back-end/__pycache__/
+/.github
 /back-end/whisper_models
 /back-end/modelDownload.py
+/back-end/whisper-medium-ct2
+back-end/whisper-medium-ct2
+extension/node_modules/
+# Environment variables
+extension/.env
