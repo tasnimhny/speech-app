@@ -17,11 +17,19 @@ class OpenAIChat:
  
     def get_fixed_code(self, incorrect_code: str) -> str:
         print(incorrect_code)
-        prompt = f"""
-            The following Python code contains an error:
-            {incorrect_code}
+        prompt = f"""You are a transcription assistant that converts spoken programming code into written text. 
 
-            Fix the error and return only the corrected line. Do not include explanations or any additional text.
+                    The user will speak code snippets, including punctuation and indentation. 
+
+                    - Convert spoken code into correctly formatted programming syntax.
+                    - Maintain proper indentation for Python, JavaScript, and other programming languages.
+                    - Convert spoken punctuation like "open parenthesis" to `(`, "close curly brace" to closed curly brace, etc.
+                    - Ignore filler words like "uh", "um", or "next line please."
+-                   - If the spoken code is ambiguous, infer the most logical syntax.
+
+                    Here is the spoken code: {incorrect_code}
+
+            
             """
 
 
@@ -55,4 +63,5 @@ class OpenAIChat:
                 fixed_code.append(chunk.choices[0].delta.content)  # Append streamed content
 
         return "".join(fixed_code)  
+
 

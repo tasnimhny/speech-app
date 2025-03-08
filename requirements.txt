@@ -3,8 +3,13 @@ pyaudio
 openai
 fastapi
 pydantic
+keyboard
+aiofiles
+dotenv
+ctranslate2
+torch
 setuptools>=68.0.0
 wheel>=0.42.0
 sounddevice>=0.4.6
 numpy>=1.26.0
-scipy>=1.11.4 
+scipy>=1.11.4
