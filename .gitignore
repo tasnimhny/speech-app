@@ -16,3 +16,5 @@ extension/node_modules/
 
 # Environment variables
 extension/.env
+/back-end/whisper_models
+/back-end/modelDownload.py
