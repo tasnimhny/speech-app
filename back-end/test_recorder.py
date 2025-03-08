@@ -35,6 +35,7 @@ class audioRecorder:
             frames_per_buffer=self.chunk
             )
         
+        
         frames = []
         max_time = 20
         print('hold space to start')
