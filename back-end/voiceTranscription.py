@@ -61,9 +61,6 @@ class whisperModel:
         print('DONE: ')
         filter_text = filter_text.split(' ')
         
-        if filter_text[0] =='go':
-            return (filter_text, before_parse)
-        
         return (filter_text, before_parse)
             
     def get_text(self):
