@@ -7,7 +7,7 @@ import * as http from 'http';
 import FormData from 'form-data';
 
 // Create output channel
-const outputChannel = vscode.window.createOutputChannel("Voice to Code");
+const outputChannel = vscode.window.createOutputChannel("Code Whisperer");
 
 // Backend API URL
 const API_URL = 'http://localhost:8000/process-audio/';
@@ -503,7 +503,7 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Voice to Code extension is now active');
+  console.log('Code Whisperer extension is now active');
 
   // Register the custom sidebar view provider
   const provider = new VoiceRecorderViewProvider(context.extensionUri);

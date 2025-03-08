@@ -46,7 +46,7 @@ const os = __importStar(require("os"));
 const http = __importStar(require("http"));
 const form_data_1 = __importDefault(require("form-data"));
 // Create output channel
-const outputChannel = vscode.window.createOutputChannel("Voice to Code");
+const outputChannel = vscode.window.createOutputChannel("Code Whisperer");
 // Backend API URL
 const API_URL = 'http://localhost:8000/process-audio/';
 class VoiceRecorderViewProvider {
@@ -501,7 +501,7 @@ class VoiceRecorderViewProvider {
 }
 VoiceRecorderViewProvider.viewType = 'voiceRecorder';
 function activate(context) {
-    console.log('Voice to Code extension is now active');
+    console.log('Code Whisperer extension is now active');
     // Register the custom sidebar view provider
     const provider = new VoiceRecorderViewProvider(context.extensionUri);
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(VoiceRecorderViewProvider.viewType, provider));
