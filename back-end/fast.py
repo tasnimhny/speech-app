@@ -4,9 +4,12 @@ import shutil
 import os
 import aiofiles
 #pip install aiofiles
+#pip install python-multipart
 from voiceTranscription import whisperModel
 from parser import textParser
 
+#to run:
+#uvicorn fast:app --reload
 
 text_parser = textParser()
 #text_parer.parse()
@@ -37,12 +40,17 @@ async def process_audio(file: UploadFile = File(...)):
             await out_file.write(content)
 
         # Use Whisper to transcribe the audio file
-        transcription = transcription_model.process_file(file_path)
+        transcription, pre_process_transcription = transcription_model.process_file(file_path)
         # Parse the transcription (using textParser)
         parsed_transcription = text_parser.parse(transcription)
 
         # Return the parsed transcription as a JSON response
-        return JSONResponse(content={"original_transcription": transcription, "parsed_transcription": parsed_transcription})
+        return JSONResponse(content={"original_transcription": pre_process_transcription, "parsed_transcription": parsed_transcription})
 
     except Exception as e:
         return JSONResponse(status_code=400, content={"message": str(e)})
+
+
+@app.get("/")
+async def read_root():
+    return {"message": "Hello World"}

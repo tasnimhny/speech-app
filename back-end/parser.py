@@ -77,7 +77,6 @@ class textParser:
     
 
     def parse(self,word_list):
-        word_list = word_list.split()
         parsed_code = []
         i = 0
         while i < len(word_list):

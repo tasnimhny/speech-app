@@ -38,16 +38,23 @@ class whisperModel:
 
 
     def process_file(self, file):
-        
-        segments, info = self.mode.transcribe(file,beam_size=5)
+        print('CALLED')
+        segments, info = self.model.transcribe(file,beam_size=5)
         audio_text = []
         for segment in segments:
             audio_text.append(segment.text)
         
-        audio_text = " ".join(audio_text)
-        audio_text.strip()
+
+        print(audio_text)
+        audio_text = audio_text[0]
+        before_parse = audio_text
+
+        audio_text = audio_text.strip()
+        audio_text = audio_text.lower()
         filter_text = re.sub(r'[^a-zA-Z0-9 ]', '', audio_text) 
-        return filter_text.split(' ')
+        print('DONE: ')
+        print(filter_text.split(' '))
+        return (filter_text.split(' '), before_parse)
             
     def get_text(self):
         segments, info = self.model.transcribe(self.audio_path, beam_size=5)
@@ -56,9 +63,11 @@ class whisperModel:
             print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
             audio_text.append(segment.text)
 
-        audio_text = " ".join(audio_text)
-        audio_text.strip()
+        audio_text = audio_text[0]
+        audio_text = audio_text.strip()
+        audio_text = audio_text.lower()
         filter_text = re.sub(r'[^a-zA-Z0-9 ]', '', audio_text) 
+
         return filter_text.split(' ')
        
       
@@ -113,6 +122,8 @@ class audioRecorder:
         # stop and close stream
         stream.stop_stream()
         stream.close()
+"""
+test:
 
 print('starting...')
 test_model = whisperModel()
@@ -123,4 +134,5 @@ for _ in range(1):
     test_recorder.record()
     transcribe = test_model.get_text()
 
-    print(parser.parse(transcribe)) 
+    print(parser.parse(transcribe)) "
+"""
