@@ -1,0 +1,70 @@
+{
+  "name": "voice-to-code",
+  "displayName": "Voice to Code",
+  "description": "Convert voice commands to code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "voice-to-code",
+          "title": "Voice to Code",
+          "icon": "media/microphone.svg"
+        }
+      ]
+    },
+    "views": {
+      "voice-to-code": [
+        {
+          "id": "voiceRecorder",
+          "name": "Voice Recorder",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "voice-to-code.startVoiceCommand",
+        "title": "Voice to Code: Start Voice Command",
+        "icon": "$(record)"
+      },
+      {
+        "command": "voice-to-code.stopVoiceCommand",
+        "title": "Voice to Code: Stop Voice Command",
+        "icon": "$(debug-stop)"
+      }
+    ],
+    "authentication": [
+      {
+        "id": "github",
+        "label": "GitHub"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  }
+}
