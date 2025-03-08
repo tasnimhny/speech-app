@@ -26,23 +26,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-.color-empty {
-  fill: #2d3748;
-}
 
-.color-scale-1 {
-  fill: #66bb6a;
-}
 
-.color-scale-2 {
-  fill: #43a047;
-}
 
-.color-scale-3 {
-  fill: #2e7d32;
-}
-
-.color-scale-4 {
-  fill: #1b5e20;
-}
 
