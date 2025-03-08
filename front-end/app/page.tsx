@@ -1,11 +1,12 @@
 "use client";
 import "./globals.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
+import { useSearchParams } from 'next/navigation';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_KEY,
@@ -26,12 +27,49 @@ export default function Page() {
   const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Check for showLogin parameter
+  useEffect(() => {
+    if (searchParams.get('showLogin') === 'true') {
+      setShowLogin(true);
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     setShowLogin(false); // Close login popup after login
     try {
+      console.log("Starting Google sign in process...");
       const result = await signInWithPopup(auth, provider);
-      console.log("User signed in:", result.user);
+      console.log("Google sign in successful, user:", result.user.email);
+      
+      // Get the ID token
+      const idToken = await result.user.getIdToken();
+      console.log("Retrieved ID token");
+      
+      // Check if we're in a VSCode authentication flow
+      const urlParams = new URLSearchParams(window.location.search);
+      const isVSCodeAuth = urlParams.get('vscode-auth');
+      console.log("Is VSCode auth flow?", !!isVSCodeAuth);
+
+      if (isVSCodeAuth) {
+        // Redirect back to VSCode with the token
+        const vscodeCallback = `vscode://voice-to-code/auth-callback?token=${idToken}`;
+        console.log("Redirecting to VSCode with callback URL:", vscodeCallback);
+        window.location.href = vscodeCallback;
+      } else {
+        console.log("Normal web flow - storing token in localStorage");
+        localStorage.setItem('vscodeAuthToken', idToken);
+        
+        // Set up token refresh
+        setInterval(async () => {
+          if (auth.currentUser) {
+            const newToken = await auth.currentUser.getIdToken(true);
+            localStorage.setItem('vscodeAuthToken', newToken);
+          }
+        }, 30 * 60 * 1000); // Refresh token every 30 minutes
+      }
+      
       setUser(result.user as User);
     } catch (error) {
       console.error("Error signing in with Google:", error);
@@ -44,6 +82,22 @@ export default function Page() {
     setUser(null);
     setDropdownOpen(false);
   };
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Get fresh token
+        const idToken = await user.getIdToken(true);
+        localStorage.setItem('vscodeAuthToken', idToken);
+      } else {
+        localStorage.removeItem('vscodeAuthToken');
+      }
+      setUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <main className="bg-gray-900 text-white min-h-screen overflow-auto">
