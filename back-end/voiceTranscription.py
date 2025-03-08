@@ -123,4 +123,4 @@ for _ in range(1):
     test_recorder.record()
     transcribe = test_model.get_text()
 
-    print(parser.parse(transcribe))
+    print(parser.parse(transcribe)) 
