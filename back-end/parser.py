@@ -1,4 +1,5 @@
 from chatgpt import OpenAIChat
+import re
 class textParser:
     def __init__(self):   
         self.open_model = OpenAIChat()
@@ -25,6 +26,7 @@ class textParser:
         "comment" :'#',
         'hashtag' :'#',
         'colon' : ':',
+        'comma' :',',
         'dash' : '-',
         'mod' : '%',
         'true' : 'True',
@@ -107,14 +109,27 @@ class textParser:
                 i = end_idx
             i+=1
             parsed_code.append(curr)
-        
         python_code = "".join(parsed_code)
         finalized_code = self.open_model.get_fixed_code(python_code)
+        print(finalized_code)
+        finalized_code = re.sub(r'```python\nif.*?:.*?```', '', finalized_code, flags=re.DOTALL)
+
+
+        """
+        
+        ifabreturn2
+        --> 
+
+        ```python
+        if abreturn2:
+        ```
+        """
         return finalized_code
 
-"""    
+"""
 temp = textParser()
 
+new_test = "[' left equals zero new line right equals zero function camel case is function', ' camel case parentheses colon while left is less than right colon']"
 test1 = "camel one two three camel"
 temp.parse(test1)
 print()
