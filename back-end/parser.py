@@ -109,11 +109,10 @@ class textParser:
                 i = end_idx
             i+=1
             parsed_code.append(curr)
-        python_code = "".join(parsed_code)
+        python_code = " ".join(parsed_code)
         finalized_code = self.open_model.get_fixed_code(python_code)
         print(finalized_code)
-        finalized_code = re.sub(r'```python\nif.*?:.*?```', '', finalized_code, flags=re.DOTALL)
-
+        finalized_code = finalized_code[9:-3]
 
         """
         

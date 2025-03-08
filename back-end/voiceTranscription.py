@@ -127,7 +127,7 @@ class audioRecorder:
         stream.close()
 
 #test:
-
+"""
 print('starting...')
 test_model = whisperModel()
 test_recorder = audioRecorder() 
@@ -138,3 +138,4 @@ for _ in range(1):
     transcribe = test_model.get_text()
 
     print(parser.parse(transcribe)) 
+"""
