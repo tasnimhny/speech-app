@@ -3,9 +3,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 import * as os from 'os';
+import * as http from 'http';
+import FormData from 'form-data';
 
 // Create output channel
 const outputChannel = vscode.window.createOutputChannel("Voice to Code");
+
+// Backend API URL
+const API_URL = 'http://localhost:8000/process-audio/';
 
 class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'voiceRecorder';
@@ -16,6 +21,80 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
   constructor(
     private readonly _extensionUri: vscode.Uri,
   ) {}
+
+  private async sendAudioToBackend(audioFilePath: string): Promise<{ original_transcription: string, parsed_transcription: string }> {
+    return new Promise((resolve, reject) => {
+      const form = new FormData();
+      form.append('file', fs.createReadStream(audioFilePath));
+
+      const request = http.request(API_URL, {
+        method: 'POST',
+        headers: {
+          ...form.getHeaders(),
+        }
+      }, (response) => {
+        let data = '';
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+        response.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            resolve(result);
+          } catch (error) {
+            reject(new Error('Failed to parse response from backend'));
+          }
+        });
+      });
+
+      request.on('error', (error) => {
+        reject(error);
+      });
+
+      form.pipe(request);
+    });
+  }
+
+  private async insertTextIntoEditor(text: string) {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      const position = editor.selection.active;
+      const currentLine = editor.document.lineAt(position.line);
+      
+      // Get the indentation of the current line
+      const currentIndent = currentLine.firstNonWhitespaceCharacterIndex;
+      const indentString = ' '.repeat(currentIndent);
+      
+      // Format the text with proper indentation
+      const formattedText = text
+        .split('\n')
+        .map((line, index) => index === 0 ? line : indentString + line)
+        .join('\n');
+
+      // Insert the text
+      await editor.edit(editBuilder => {
+        editBuilder.insert(position, formattedText);
+      });
+
+      // Get the range of the inserted text
+      const startPos = position;
+      const endPos = position.translate(formattedText.split('\n').length);
+      const range = new vscode.Range(startPos, endPos);
+
+      try {
+        // Format the document using VSCode's formatting API
+        await vscode.commands.executeCommand('editor.action.formatSelection', {
+          start: startPos,
+          end: endPos
+        });
+      } catch (error) {
+        outputChannel.appendLine(`Warning: Could not format code: ${error}`);
+        // Continue even if formatting fails
+      }
+    } else {
+      throw new Error('No active text editor');
+    }
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -153,10 +232,24 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
       if (this.currentAudioFile && fs.existsSync(this.currentAudioFile)) {
         const stats = fs.statSync(this.currentAudioFile);
         outputChannel.appendLine(`Recording saved: ${this.currentAudioFile} (${stats.size} bytes)`);
-        this._view.webview.postMessage({ 
-          command: 'updateStatus', 
-          text: 'Recording saved successfully' 
-        });
+        
+        try {
+          // Send the audio file to the backend
+          const result = await this.sendAudioToBackend(this.currentAudioFile);
+          outputChannel.appendLine('Received transcription from backend');
+          outputChannel.appendLine(`Original: ${result.original_transcription}`);
+          outputChannel.appendLine(`Parsed: ${result.parsed_transcription}`);
+
+          // Insert the parsed transcription into the current editor
+          await this.insertTextIntoEditor(result.parsed_transcription);
+          
+          this._view.webview.postMessage({ 
+            command: 'updateStatus', 
+            text: 'Transcription inserted into editor' 
+          });
+        } catch (error) {
+          throw new Error(`Failed to process audio: ${error}`);
+        }
       } else {
         throw new Error('Recording file not found');
       }

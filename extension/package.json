@@ -59,7 +59,11 @@
     "lint": "eslint src --ext ts",
     "test": "vscode-test"
   },
+  "dependencies": {
+    "form-data": "^4.0.0"
+  },
   "devDependencies": {
+    "@types/form-data": "^2.5.0",
     "@types/vscode": "^1.85.0",
     "@types/node": "18.x",
     "@typescript-eslint/eslint-plugin": "^6.15.0",

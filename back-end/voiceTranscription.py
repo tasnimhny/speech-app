@@ -46,7 +46,10 @@ class whisperModel:
         
 
         print(audio_text)
-        audio_text = audio_text[0]
+        combined_str  = []
+        for word in audio_text:
+            combined_str.append(word)
+        audio_text = " ".join(combined_str)
         before_parse = audio_text
 
         audio_text = audio_text.strip()
@@ -122,9 +125,9 @@ class audioRecorder:
         # stop and close stream
         stream.stop_stream()
         stream.close()
-"""
-test:
 
+#test:
+"""
 print('starting...')
 test_model = whisperModel()
 test_recorder = audioRecorder() 
@@ -134,5 +137,5 @@ for _ in range(1):
     test_recorder.record()
     transcribe = test_model.get_text()
 
-    print(parser.parse(transcribe)) "
+    print(parser.parse(transcribe)) 
 """

@@ -1,11 +1,13 @@
-
+from chatgpt import OpenAIChat
+import re
 class textParser:
     def __init__(self):   
-
+        self.open_model = OpenAIChat()
         self.word_bank = {
         'add': '+',
         'plus': '+',
         'subtract': '-',
+        'equals': '=',
         'divide': '/',
         'multiply': '*',
         'power': '**',
@@ -24,18 +26,36 @@ class textParser:
         "comment" :'#',
         'hashtag' :'#',
         'colon' : ':',
+        'comma' :',',
         'dash' : '-',
         'mod' : '%',
+        'true' : 'True',
         }
+
 
         self.function_bank ={
         'camel' : self.camel_case,
         'snake' : self.snake_case,
-        "concat" : self.concat
+        "concat" : self.concat,
+        "string" : self.create_str
         }
 
     def chatgpt(self,arr,idx):
-        user_request = arr[idx+1:]
+        user_prompt = "".join(arr[idx+1:])
+        python_code = "".join(arr[:idx])
+        self.open_model.add_user_request(python_code, user_prompt)
+    
+    def create_str(self,arr, starting_idx):
+        word_combine = []
+        for i in range(starting_idx+1, len(arr)):
+            curr_word = arr[i]
+            if curr_word == "string":
+                word_combine[0] = "\'" + word_combine[0]
+                word_combine[-1] = word_combine[-1] + "\'"
+                return [" ".join(word_combine), i]
+            word_combine.append(curr_word)
+        return 
+        
 
     def camel_case(self,arr, start):
         word_combine = []
@@ -89,12 +109,26 @@ class textParser:
                 i = end_idx
             i+=1
             parsed_code.append(curr)
-        print("".join(parsed_code))
-        return " ".join(parsed_code)
+        python_code = " ".join(parsed_code)
+        finalized_code = self.open_model.get_fixed_code(python_code)
+        print(finalized_code)
+        finalized_code = finalized_code[9:-3]
 
-"""    
+        """
+        
+        ifabreturn2
+        --> 
+
+        ```python
+        if abreturn2:
+        ```
+        """
+        return finalized_code
+
+"""
 temp = textParser()
 
+new_test = "[' left equals zero new line right equals zero function camel case is function', ' camel case parentheses colon while left is less than right colon']"
 test1 = "camel one two three camel"
 temp.parse(test1)
 print()
