@@ -38,6 +38,21 @@ class OpenAIChat:
 
         return fixed_code  
  
+    def turn_python(self, code, command):
+        prompt = f"""
+            Turn The following prompt into python and follow the users request: {command}
+            Here is the code: {code}
+        """
+        stream = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            stream=True,
+        )
+        
+        fixed_code = [] 
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                fixed_code.append(chunk.choices[0].delta.content)  # Append streamed content
 
-
+        return "".join(fixed_code)  
 
