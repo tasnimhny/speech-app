@@ -9,7 +9,6 @@ extension/node_modules/
 /back-end/__pycache__/
 /.github
 /back-end/whisper_models
-/back-end/modelDownload.py
 /back-end/whisper-medium-ct2
 back-end/whisper-medium-ct2
 extension/node_modules/
