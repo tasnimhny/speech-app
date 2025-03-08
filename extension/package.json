@@ -43,6 +43,12 @@
         "title": "Voice to Code: Stop Voice Command",
         "icon": "$(debug-stop)"
       }
+    ],
+    "authentication": [
+      {
+        "id": "github",
+        "label": "GitHub"
+      }
     ]
   },
   "scripts": {
