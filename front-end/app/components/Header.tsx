@@ -1,12 +1,11 @@
-// app/components/Header.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { signInWithPopup, signOut } from 'firebase/auth';
-import { auth, provider } from '../lib/firebase';
-import { useAuth } from './AuthProvider';
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { signInWithPopup, signOut } from "firebase/auth";
+import { auth, provider } from "../lib/firebase";
+import { useAuth } from "./AuthProvider";
 
 export default function Header() {
   const [showLogin, setShowLogin] = useState(false);
@@ -35,17 +34,32 @@ export default function Header() {
     <>
       <header className="bg-gray-800 sticky top-0 z-50">
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
-          <div className="flex lg:flex-1">
-            <Link href="/" className="-m-1.5 p-1.5">
+          
+          {/* Logo and Brand Name */}
+          <div className="flex items-center lg:flex-1 space-x-3">
+            <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
+              {/* Logo */}
+              <Image 
+                src="/images/SpeechCode.png" // Replace with actual logo path
+                width={35} 
+                height={35} 
+                alt="Code Whisperer Logo" 
+                className="rounded-full"
+              />
+              {/* Brand Name */}
               <span className="font-bold text-xl text-white">Code Whisperer</span>
             </Link>
           </div>
+
+          {/* Navigation Links */}
           <div className="hidden lg:flex lg:gap-x-12">
             <Link href="/" className="text-sm font-semibold text-white hover:text-gray-300">Home</Link>
             <Link href="/pricing" className="text-sm font-semibold text-white hover:text-gray-300">Pricing</Link>
             <Link href="/documentation" className="text-sm font-semibold text-white hover:text-gray-300">Documentation</Link>
             <Link href="/analytics" className="text-sm font-semibold text-white hover:text-gray-300">Analytics</Link>
           </div>
+
+          {/* User Login/Profile Section */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-end relative">
             {user ? (
               <div className="relative">
@@ -67,30 +81,45 @@ export default function Header() {
                       {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
                     </div>
                   )}
-                  <span>{user.displayName || 'User'}</span>
+                  <span>{user.displayName || "User"}</span>
                 </button>
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-700 text-white rounded shadow-lg z-10">
                     <div className="px-4 py-3 border-b border-gray-600">
                       <p className="text-sm">{user.email}</p>
                     </div>
-                    <button onClick={handleLogout} className="block w-full px-4 py-2 text-left hover:bg-gray-600">Log out</button>
+                    <button onClick={handleLogout} className="block w-full px-4 py-2 text-left hover:bg-gray-600">
+                      Log out
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
-              <button onClick={() => setShowLogin(true)} className="text-sm font-semibold text-white hover:text-gray-300">Log in &rarr;</button>
+              <button onClick={() => setShowLogin(true)} className="text-sm font-semibold text-white hover:text-gray-300">
+                Log in &rarr;
+              </button>
             )}
           </div>
         </nav>
       </header>
 
+      {/* Login Modal */}
       {showLogin && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-2xl font-bold text-white">Login</h2>
-            <button onClick={handleGoogleLogin} className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded">Login with Google</button>
-            <button onClick={() => setShowLogin(false)} className="mt-4 w-full text-center text-sm text-gray-400 hover:text-white">Close</button>
+            <button 
+              onClick={handleGoogleLogin} 
+              className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded"
+            >
+              Login with Google
+            </button>
+            <button 
+              onClick={() => setShowLogin(false)} 
+              className="mt-4 w-full text-center text-sm text-gray-400 hover:text-white"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
