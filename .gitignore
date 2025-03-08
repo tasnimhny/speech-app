@@ -5,6 +5,12 @@ extension/node_modules/
 
 #github workflow
 .github
+/venv
+/back-end/__pycache__/
+/.github
+/back-end/whisper-medium-ct2
+back-end/whisper-medium-ct2
+extension/node_modules/
 
 # Environment variables
 extension/.env
