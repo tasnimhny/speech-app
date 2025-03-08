@@ -8,6 +8,14 @@ aiofiles
 dotenv
 ctranslate2
 torch
+keyboard
+aiofiles
+dotenv
+ctranslate2
+torch
+python-multipart
+black
+autopep8
 setuptools>=68.0.0
 wheel>=0.42.0
 sounddevice>=0.4.6

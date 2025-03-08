@@ -45,8 +45,9 @@ class OpenAIChat:
                 fixed_code += chunk.choices[0].delta.content  # Append streamed content
 
         return fixed_code  
- 
-    def turn_python(self, code, command):
+    
+        
+    def add_user_request(self, code, command):
         prompt = f"""
             Turn The following prompt into python and follow the users request: {command}
             Here is the code: {code}
