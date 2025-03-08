@@ -44,6 +44,7 @@ export default function Header() {
             <Link href="/" className="text-sm font-semibold text-white hover:text-gray-300">Home</Link>
             <Link href="/pricing" className="text-sm font-semibold text-white hover:text-gray-300">Pricing</Link>
             <Link href="/documentation" className="text-sm font-semibold text-white hover:text-gray-300">Documentation</Link>
+            <Link href="/analytics" className="text-sm font-semibold text-white hover:text-gray-300">Analytics</Link>
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end relative">
             {user ? (
