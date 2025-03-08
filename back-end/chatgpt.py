@@ -26,6 +26,7 @@ class OpenAIChat:
                     - Convert spoken punctuation like "open parenthesis" to `(`, "close curly brace" to closed curly brace, etc.
                     - Ignore filler words like "uh", "um", or "next line please."
 -                   - If the spoken code is ambiguous, infer the most logical syntax.
+                    - ONLY RETURN THE CODE
 
                     Here is the spoken code: {incorrect_code}
 
