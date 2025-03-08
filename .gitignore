@@ -6,3 +6,5 @@
 /.github
 /back-end/whisper-medium-ct2
 back-end/whisper-medium-ct2
+/back-end/whisper_models
+/back-end/modelDownload.py
