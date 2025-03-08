@@ -1,5 +1,6 @@
 from chatgpt import OpenAIChat
 import re
+
 class textParser:
     def __init__(self):   
         self.open_model = OpenAIChat()
@@ -30,6 +31,10 @@ class textParser:
         'dash' : '-',
         'mod' : '%',
         'true' : 'True',
+        'false' : 'False',
+        'list' :'[]',
+        'set' :'set()',
+        'dictionary' : '{{}}'
         }
 
 
@@ -109,10 +114,11 @@ class textParser:
                 i = end_idx
             i+=1
             parsed_code.append(curr)
-        python_code = " ".join(parsed_code)
+        python_code = "".join(parsed_code)
         finalized_code = self.open_model.get_fixed_code(python_code)
         print(finalized_code)
-        finalized_code = finalized_code[9:-3]
+        finalized_code = re.sub(r'```python\nif.*?:.*?```', '', finalized_code, flags=re.DOTALL)
+
 
         """
         
