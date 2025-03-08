@@ -2,7 +2,7 @@
 .env*
 
 /venv
-/back-end/__pycache__
+/back-end/__pycache__/
 /.github
 /back-end/whisper-medium-ct2
 back-end/whisper-medium-ct2
