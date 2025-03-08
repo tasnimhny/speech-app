@@ -15,13 +15,16 @@ import keyboard
 import time
 from parser import textParser
 import re
+from huggingface_hub import snapshot_download
 
 
 class whisperModel:
     def __init__(self):
         #model_size = "medium"
-        model_size= "whisper-medium-ct2"
-        self.model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        #model_size= "whisper-medium-ct2"
+        model_path = snapshot_download(repo_id="guillaumekln/faster-whisper-small", cache_dir="./whisper_models")       
+        self.model = WhisperModel(model_path)
+        #self.model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
         #optional
         self.audio_path = "voice_audio.wav"
@@ -132,7 +135,7 @@ class audioRecorder:
 
 #test:
 """
-print('starting...')
+print('starting...')                                   
 test_model = whisperModel()
 test_recorder = audioRecorder() 
 parser = textParser()
@@ -141,5 +144,5 @@ for _ in range(1):
     test_recorder.record()
     transcribe = test_model.get_text()
 
-    print(parser.parse(transcribe)) 
+    #print(parser.parse(transcribe)) 
 """
