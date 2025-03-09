@@ -43,7 +43,7 @@ async def process_audio(file: UploadFile = File(...)):
         transcription, pre_process_transcription = transcription_model.process_file(file_path)
 
         # Parse the transcription (using textParser)
-        if transcription[0] =='go':
+        if transcription[0] =='go' or transcription[0] == 'delete':
             print(transcription)
             transcription = " ".join(transcription)
             return JSONResponse(content={"original_transcription": pre_process_transcription, "parsed_transcription": transcription})

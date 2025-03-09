@@ -72,6 +72,43 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
       return;
     }
 
+    // Check for "delete line" command
+    const deleteLineMatch = text.toLowerCase().match(/^delete line(?:s)? (\d+)(?:\s+through\s+(\d+))?$/);
+    if (deleteLineMatch) {
+      const startLine = parseInt(deleteLineMatch[1]) - 1; // Convert to 0-based index
+      const endLine = deleteLineMatch[2] ? parseInt(deleteLineMatch[2]) - 1 : startLine; // If no end line, delete single line
+
+      if (startLine >= 0 && startLine < editor.document.lineCount &&
+          endLine >= 0 && endLine < editor.document.lineCount) {
+        // Get the range of lines to delete
+        const range = new vscode.Range(
+          new vscode.Position(startLine, 0),
+          new vscode.Position(endLine, editor.document.lineAt(endLine).text.length)
+        );
+
+        // Delete the lines
+        await editor.edit(editBuilder => {
+          editBuilder.delete(range);
+        });
+        
+        // Update status
+        this._view?.webview.postMessage({ 
+          command: 'updateStatus', 
+          text: startLine === endLine ? 
+            `Deleted line ${startLine + 1}` : 
+            `Deleted lines ${startLine + 1} through ${endLine + 1}` 
+        });
+        return;
+      } else {
+        outputChannel.appendLine(`Warning: Invalid line number(s) ${startLine + 1}${endLine !== startLine ? ` through ${endLine + 1}` : ''}`);
+        this._view?.webview.postMessage({ 
+          command: 'updateStatus', 
+          text: `Invalid line number(s)` 
+        });
+        return;
+      }
+    }
+
     // Check for "go to line" command
     const goToLineMatch = text.toLowerCase().match(/^go to line (\d+)$/);
     if (goToLineMatch) {
@@ -454,6 +491,7 @@ class VoiceRecorderViewProvider implements vscode.WebviewViewProvider {
                 <li> Use keywords like "function", "if", "for", etc.</li>
                 <li> Use "camel" or "snake" for case formatting</li>
                 <li> Say "go to line {number}" to move cursor</li>
+                <li> Say "delete line {number}" or "delete lines {start} through {end}"</li>
             </ul>
         </div>
         <div class="debug-info"></div>
